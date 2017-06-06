@@ -191,39 +191,42 @@ exports.check = function (req, res, next) {
 // GET /quizzes/randomPlay
 exports.randomplay = function (req, res, next) {
  
-   if(!req.session.resolved) req.session.resolved = [-1];
+   if(!req.session.resolved){
+        req.session.resolved = [-1];
+    }
 
-   if(!req.session.score) req.session.score = 0;
+   if(!req.session.score){
+        req.session.score = 0;
+    }
  
    models.Quiz.count({where: {id: { $notIn: req.session.resolved}}})
 
    .then (function(count) {
-	return models.Quiz.findAll({ where: {id: { $notIn: req.session.resolved}}, limit:1, offset:Math.floor(Math.random()*count)})
+	   return models.Quiz.findAll({ where: {id: { $notIn: req.session.resolved}}, limit:1, offset:Math.floor(Math.random()*count)})
 	})
 
     .then(function(quizzes) {
        
       if(quizzes.length > 0){
-            var q0= quizzes[0];
+            var q0= quizzes[parseInt(Math.random()*quizzes.length)];
             req.session.resolved.push(q0.id);
             res.render('quizzes/random_play', {
             quiz: q0,
             score: req.session.score
           });
-          
-    } else {
-        var score = req.session.score;
-        req.session.resolved = [-1];
-        req.session.score = 0;
-        res.render('quizzes/random_nomore', {
-        score: score});
-    }
+        } else {
+            var score = req.session.score;
+            req.session.resolved = [-1];
+            req.session.score = 0;
+            res.render('quizzes/random_nomore', {
+            score: score});
+        }
     })
 
     .catch(function (error) {
-    req.flash('error', 'Error al buscar' + error.message);
-    next(error);
-    });
+        req.flash('error', 'Error al buscar' + error.message);
+        next(error);
+        });
     };
  
 // GET /quizzes/randomcheck/
