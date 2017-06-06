@@ -191,11 +191,9 @@ exports.check = function (req, res, next) {
 // GET /quizzes/randomPlay
 exports.randomplay = function (req, res, next) {
  
-   if(!req.session.resolved)
-   req.session.resolved = [-1];
- 
-   if(!req.session.score)
-   req.session.score = 0;
+   if(!req.session.resolved) req.session.resolved = [-1];
+
+   if(!req.session.score) req.session.score = 0;
  
    models.Quiz.count({where: {id: { $notIn: req.session.resolved}}})
 
@@ -214,12 +212,12 @@ exports.randomplay = function (req, res, next) {
           });
           
     } else {
-         var score = req.session.score;
-         req.session.resolved = [-1];
-         req.session.score = 0;
+        var score = req.session.score;
+        req.session.resolved = [-1];
+        req.session.score = 0;
         res.render('quizzes/random_nomore', {
         score: score});
-    }               
+    }
     })
 
     .catch(function (error) {
@@ -236,14 +234,14 @@ exports.randomcheck = function (req, res, next) {
     if (!req.session.score) req.session.score = 0;
     var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
     if (result) {
-        ++req.session.score;
+        var score=++req.session.score;
     }else {
         req.session.score = 0;
         req.session.questions = [-1];
     }
  
     res.render('quizzes/random_result', {
-        score: req.session.score,
+        score: score,
         result: result,
         answer: answer
      
