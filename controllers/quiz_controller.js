@@ -239,11 +239,11 @@ exports.randomcheck = function (req, res, next) {
         req.session.score = 0;
     } 
     var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
-    
+    var score=req.session.score;
     if (result) {
-        var score=1+req.session.score;
+        var score=1+score;
     }else {
-        req.session.score = 0;
+        score = 0;
         req.session.questions = [-1];
     }
  
