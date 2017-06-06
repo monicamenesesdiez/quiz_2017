@@ -188,69 +188,96 @@ exports.check = function (req, res, next) {
     });
 };
 
-// GET /quizzes/randomPlay
-exports.randomplay = function (req, res, next) {
-
-   if(!req.session.score){
-        req.session.score = 0;
+//GET /quizzes/randomplay 
+exports.randomplay = function(req, res, next){
+    var sesion = req.session;
+    //Si no hay sesion previa, reseteo puntuacion y el numero de
+    //preguntas acertadas
+    if (!sesion.score){
+        sesion.score = 0;
     }
-    if(!req.session.resolved){
-        req.session.resolved = [-1];
+    if (!sesion.preguntasAcertadas) {
+        sesion.preguntasAcertadas = [-1];
     }
- 
-   models.Quiz.count()
+    
 
-   .then (function(count) {
-       return models.Quiz.findAll({ where: {id: { $notIn: req.session.resolved}}, limit:1, offset:Math.floor(Math.random()*count)})
+    models.Quiz.count() 
+    .then(function(count){ 
+        return models.Quiz.findAll({ 
+            //Busco en la base de datos aquellas preguntas que no
+            //hayan sido contestadas ya
+            where: {id: {$notIn:sesion.preguntasAcertadas}}
+        })
     })
-
-    .then(function(quizzes) {
-       
-      if(quizzes.length > 0){
-            var q0= quizzes[parseInt(Math.random()*quizzes.length)];
-            req.session.resolved.push(q0.id);
-            res.render('quizzes/random_play', {
-            quiz: q0,
-            score: req.session.score
-          });
-        } else {
-            var score = req.session.score;
-            req.session.resolved = [-1];
-            req.session.score = 0;
-            res.render('quizzes/random_nomore', {
-            score: score});
+    .then(function(quizzes){
+        if(quizzes.length > 0){
+            //De las que me devuelve escojo una aleatoria
+            var indice = parseInt(Math.random()*quizzes.length);
+            return quizzes[indice];
+        }else{
+            //Si no quedan preguntas no constestadas ya, devuelvo null
+            return null;
         }
     })
+    .then(function(quiz){
+        if(quiz){
+            //Lo primero es meter en preguntasAcertadas el id del
+            //quiz que me acaba de salir
+            sesion.preguntasAcertadas.push(quiz.id);
+            //Respondo con random_play
+            res.render('quizzes/random_play',{
+                quiz: quiz,
+                score: sesion.score
+            });
+        }else{ //Cuando no quedan mas preguntas se responde con 
+            //random_nomore
+            var score = sesion.score;
+            sesion.score =0;
+            sesion.preguntasAcertadas = [-1];
 
-    .catch(function (error) {
-        req.flash('error', 'Error al buscar: ' + error.message);
+            res.render('quizzes/random_nomore', {
+                score:score
+            });
+        }
+    }) //Para manejar errores
+    .catch(function(error){
+        req.flash('error', 'Ha habido un error al cargar el Quiz:' +error.message);
         next(error);
-        });
-    };
- 
-// GET /quizzes/randomcheck/
-exports.randomcheck = function (req, res, next) {
-    
-    var answer = req.query.answer || "";
-    if (!req.session.resolved){
-        req.session.resolved = [-1];
-    } 
-    if (!req.session.score){
-        req.session.score = 0;
-    } 
-    var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
-    
-    if (result) {
-        req.session.score+=1;
-    }else {
-        req.session.score=0;
-        req.session.resolved = [-1];
-    }
- 
-    res.render('quizzes/random_result', {
-        score: req.session.score,
-        result: result,
-        answer: answer
-     
     });
 };
+
+//GET /quizzes/randomcheck/:quizId
+exports.randomcheck = function (req,res, next){
+    var sesion = req.session;
+
+    //Si no hay sesion previa, reseteo puntuacion y el numero de
+    //preguntas acertadas
+    if (!sesion.score) {
+        sesion.score = 0;
+    }
+    if (!sesion.preguntasAcertadas) {
+        sesion.preguntasAcertadas = [-1];
+    }
+    //Guardamos la respuesta que se manda en la query
+    var answer = (req.query.answer || ""); 
+
+    //Comprobamos si la respuesta mandada es correcta
+    var result= (answer.toLowerCase().trim() ===req.quiz.answer.toLowerCase().trim());
+
+    //Si es correcta sumamos uno a la puntuacion
+    if(result){
+        sesion.score += 1;
+    }else{ //Sino, reseteamos
+        sesion.score =0;
+        sesion.preguntasAcertadas=[-1];
+    }
+
+    //Respondemos con random_result
+    res.render('quizzes/random_result',{
+        quiz :req.quiz,
+        score: sesion.score,
+        answer: answer,
+        result: result  
+    });
+};
+
