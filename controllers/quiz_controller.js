@@ -190,7 +190,7 @@ exports.check = function (req, res, next) {
 
 // GET /quizzes/randomPlay
 exports.randomplay = function (req, res, next) {
- 
+
    if(!req.session.score){
         req.session.score = 0;
     }
@@ -230,7 +230,7 @@ exports.randomplay = function (req, res, next) {
  
 // GET /quizzes/randomcheck/
 exports.randomcheck = function (req, res, next) {
-
+    
     var answer = req.query.answer || "";
     if (!req.session.resolved){
         req.session.resolved = [-1];
@@ -239,17 +239,16 @@ exports.randomcheck = function (req, res, next) {
         req.session.score = 0;
     } 
     var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
-    var score=req.session.score;
+    
     if (result) {
-        var score=1+score;
+        ++req.session.score;
     }else {
         req.session.score=0;
-        score = 0;
         req.session.resolved = [-1];
     }
  
     res.render('quizzes/random_result', {
-        score: score,
+        score: req.session.score,
         result: result,
         answer: answer
      
