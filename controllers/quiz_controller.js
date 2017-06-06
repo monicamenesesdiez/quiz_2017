@@ -251,6 +251,5 @@ exports.randomcheck = function (req, res, next) {
         score: req.session.score,
         result: result,
         answer: answer
-     
     });
 };
