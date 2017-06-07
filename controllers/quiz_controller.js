@@ -240,12 +240,18 @@ exports.randomplay = function (req, res, next) {
     })
 
     .then(function(quizzes) {
-       
-      if(quizzes.length > 0){
-            var q0= quizzes[parseInt(Math.random()*quizzes.length)];
-            req.session.resolved.push(q0.id);
+ 
+        if (quizzes.length > 0)
+            return quizzes[parseInt(Math.random() * quizzes.length)];
+        else
+        return null;
+ 
+    })
+    .then(function(quiz) {
+        if (quiz) {
+            req.session.resolved.push(quiz.id);
             res.render('quizzes/random_play', {
-            quiz: q0,
+            quiz: quiz,
             score: req.session.score
           });
         } else {
@@ -267,16 +273,18 @@ exports.randomplay = function (req, res, next) {
 exports.randomcheck = function (req, res, next) {
     
     var answer = req.query.answer || "";
+    if (!req.session.score){
+        req.session.score = 0;
+    }
+
     if (!req.session.resolved){
         req.session.resolved = [-1];
     } 
-    if (!req.session.score){
-        req.session.score = 0;
-    } 
+     
     var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
     
     if (result) {
-        req.session.score+=1;
+        ++req.session.score;
     }else {
         req.session.score=0;
         req.session.resolved = [-1];
